@@ -19,8 +19,8 @@
         datos.forEach(persona => {
           const li = document.createElement("li");
           li.innerHTML = `${persona.nombre} ${persona.apellidos} 
-          ,codigo postal: ${persona.codigo_postal} ,
-          <a href="getUserInfo/api">telefono: ${persona.telefono}</a>`;
+          ,Codigo postal: ${persona.codigo_postal} ,
+          Telefono: <a href="getUserInfo/api/${persona.id}">${persona.telefono}</a>`;
           lista.appendChild(li);
         });
       } catch (err) {
