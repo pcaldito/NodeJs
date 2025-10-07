@@ -12,7 +12,6 @@ const servidor = http.createServer(async (req, res) => {
     let filePath;
     let contentType;
 
-    // Rutas de archivos estáticos (index, imágenes, CSS, etc.)
     if (req.url === "/index") {
       filePath = path.join(__dirname, "src", "index.html");
       contentType = "text/html";
@@ -28,7 +27,6 @@ const servidor = http.createServer(async (req, res) => {
       else contentType = "application/octet-stream";
     }
 
-    // Si hay un archivo para servir
     if (filePath) {
       fs.readFile(filePath, (err, data) => {
         if (err) {
@@ -40,17 +38,15 @@ const servidor = http.createServer(async (req, res) => {
         }
       });
     } 
-    // Ruta raíz
     else if (req.url === "/") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("Hola!");
     } 
-    // Ejemplo extra
     else if (req.url === "/saludo") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("Hola desde el saludo");
     } 
-    // NUEVA ruta de la API
+    // ✅ TODA la lista
     else if (req.url === "/getUserInfo/api") {
       try {
         const lista = await conectarDB();
@@ -61,13 +57,29 @@ const servidor = http.createServer(async (req, res) => {
         res.writeHead(500, { "Content-Type": "text/plain" });
         res.end("Error al conectar con la base de datos");
       }
-    } 
-    // Autor
+    }
+    // ✅ Usuario por ID (por ejemplo /getUserInfo/api/3)
+    else if (req.url.startsWith("/getUserInfo/api/")) {
+      const id = req.url.split("/").pop(); // obtiene el número al final
+      try {
+        const usuario = await obtenerUsuarioPorId(id);
+        if (usuario) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(usuario));
+        } else {
+          res.writeHead(404, { "Content-Type": "text/plain" });
+          res.end("Usuario no encontrado");
+        }
+      } catch (err) {
+        console.error(err);
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Error al consultar la base de datos");
+      }
+    }
     else if (req.url === "/autor") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("Soy Pablo y este es mi primer servidor con Node.js");
     } 
-    // Si no coincide nada
     else {
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("Ruta no encontrada");
@@ -84,7 +96,6 @@ servidor.listen(PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
 
-// Conexión a la base de datos
 async function conectarDB() {
   const conexion = mysql.createConnection({
     host: "localhost",
@@ -97,11 +108,32 @@ async function conectarDB() {
     conexion.connect((err) => {
       if (err) reject(err);
       else {
-        console.log("Conexión exitosa");
         const query = "SELECT * FROM informacion";
         conexion.query(query, (error, resultados) => {
           if (error) reject(error);
           else resolve(resultados);
+        });
+      }
+    });
+  });
+}
+
+async function obtenerUsuarioPorId(id) {
+  const conexion = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "agenda"
+  });
+
+  return new Promise((resolve, reject) => {
+    conexion.connect((err) => {
+      if (err) reject(err);
+      else {
+        const query = "SELECT * FROM informacion WHERE id = ?";
+        conexion.query(query, [id], (error, resultados) => {
+          if (error) reject(error);
+          else resolve(resultados[0]); // devuelve el primer resultado
         });
       }
     });
